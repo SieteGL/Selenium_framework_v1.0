@@ -21,7 +21,7 @@ pipeline {
         choice(name: 'ENV', choices: ['qa', 'staging', 'prod-smoke'], description: 'Execution environment.')
         choice(name: 'BROWSER', choices: ['chrome', 'firefox'], description: 'Local browser installed on the Jenkins agent.')
         booleanParam(name: 'HEADLESS', defaultValue: true, description: 'Run the browser without a visible window.')
-        choice(name: 'TEST_SUITE', choices: ['smoke', 'regression', 'e2e', 'negative', 'sanity'], description: 'Cucumber suite tag to execute.')
+        choice(name: 'TEST_SUITE', choices: ['smoke', 'casa-quintero', 'regression', 'e2e', 'negative', 'sanity'], description: 'Cucumber suite tag to execute.')
         choice(name: 'EXECUTION_MODE', choices: ['local'], description: 'Only local execution is enabled in this baseline.')
         string(name: 'BASE_URL_OVERRIDE', defaultValue: '', trim: true, description: 'Optional HTTP(S) base URL override. Leave empty to use the environment file.')
     }
