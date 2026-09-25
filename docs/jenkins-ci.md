@@ -1,6 +1,6 @@
 # Jenkins CI baseline
 
-`Jenkinsfile` is a declarative, parameterized baseline for this QA repository. It runs on `agent any` and assumes the selected Jenkins agent already has Java 21, Maven 3.9+ and the requested local browser installed and reachable on `PATH`. Selenium Manager resolves the compatible browser driver at execution time.
+`Jenkinsfile` is a declarative, parameterized baseline for this QA repository. It runs on a Jenkins agent labeled `qa-linux` and assumes that agent already has Java 21, Maven 3.9+ and the requested local browser installed and reachable on `PATH`. Selenium Manager resolves the compatible browser driver at execution time.
 
 It deliberately does not install Jenkins, Docker, Grid, RemoteWebDriver or a browser. `EXECUTION_MODE` is limited to `local`, matching the current framework contract.
 
@@ -34,6 +34,8 @@ Configure an agent with the following available from `PATH`:
 - Java 21 (`java -version`)
 - Maven 3.9 or newer (`mvn -version`)
 - Chrome for `chrome` builds and/or Firefox for `firefox` builds
+
+Apply the Jenkins label `qa-linux` to that agent. The pipeline deliberately does not run on the controller, which should remain dedicated to orchestration.
 
 Create a Pipeline job that points at the repository and uses **Pipeline script from SCM**. Jenkins will discover `Jenkinsfile` at the repository root. The baseline uses common Pipeline steps (`checkout`, `junit`, `archiveArtifacts`); ensure the normal Jenkins Pipeline and JUnit support is available in the controller.
 

@@ -7,7 +7,9 @@ def runMaven(String arguments) {
 }
 
 pipeline {
-    agent any
+    agent {
+        label 'qa-linux'
+    }
 
     options {
         disableConcurrentBuilds()
