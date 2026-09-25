@@ -11,8 +11,8 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 public class Waits {
     private final WebDriverWait wait;
 
-    public Waits(WebDriver driver, long timeoutSeconds) {
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds));
+    public Waits(WebDriver driver, Duration timeout) {
+        this.wait = new WebDriverWait(driver, timeout);
     }
 
     public WebElement visible(By locator) {

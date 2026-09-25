@@ -8,4 +8,5 @@ logs/
 screenshots/
 .env
 *.log
-src/test/resources/testdata/credentials.properties
+.DS_Store
+Thumbs.db

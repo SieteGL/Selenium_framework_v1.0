@@ -4,6 +4,8 @@ import cl.consultor.qa.utils.Waits;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
+import java.time.Duration;
+
 public class LoginPage {
     private static final By USERNAME = By.id("user-name");
     private static final By PASSWORD = By.id("password");
@@ -12,9 +14,9 @@ public class LoginPage {
     private final WebDriver driver;
     private final Waits waits;
 
-    public LoginPage(WebDriver driver, long timeoutSeconds) {
+    public LoginPage(WebDriver driver, Duration timeout) {
         this.driver = driver;
-        this.waits = new Waits(driver, timeoutSeconds);
+        this.waits = new Waits(driver, timeout);
     }
 
     public void open(String baseUrl) {
@@ -23,7 +25,7 @@ public class LoginPage {
 
     public void loginAs(String username, String password) {
         waits.visible(USERNAME).sendKeys(username);
-        driver.findElement(PASSWORD).sendKeys(password);
+        waits.visible(PASSWORD).sendKeys(password);
         waits.clickable(LOGIN_BUTTON).click();
     }
 

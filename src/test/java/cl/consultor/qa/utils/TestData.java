@@ -11,7 +11,9 @@ public final class TestData {
     }
 
     public static String value(String key) {
-        return DATA.getProperty(key);
+        String value = DATA.getProperty(key);
+        if (value == null || value.isBlank()) throw new IllegalStateException("Missing required test data key: " + key);
+        return value;
     }
 
     private static Properties load() {

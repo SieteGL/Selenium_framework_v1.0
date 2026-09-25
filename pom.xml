@@ -3,9 +3,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>cl.consultor.qa</groupId>
-    <artifactId>qa-web-automation</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
-    <name>qa-web-automation</name>
+    <artifactId>qa-web-automation-template</artifactId>
+    <version>0.4.1</version>
+    <name>QA Web Automation Template</name>
+    <description>Reusable local Web automation template with Selenium, Cucumber and JUnit 5.</description>
 
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
@@ -14,7 +15,7 @@
         <cucumber.version>7.33.0</cucumber.version>
         <junit.jupiter.version>5.14.4</junit.jupiter.version>
         <junit.platform.version>1.14.4</junit.platform.version>
-        <slf4j.version>2.0.17</slf4j.version>
+        <logback.version>1.5.18</logback.version>
         <surefire.version>3.6.0</surefire.version>
         <cucumber.filter.tags></cucumber.filter.tags>
     </properties>
@@ -52,9 +53,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>${slf4j.version}</version>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -72,6 +73,7 @@
                     </includes>
                     <systemPropertyVariables>
                         <cucumber.filter.tags>${cucumber.filter.tags}</cucumber.filter.tags>
+                        <framework.version>${project.version}</framework.version>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

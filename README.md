@@ -1,119 +1,126 @@
-# qa-web-automation - Fase 1
+# qa-web-automation - Fase 1.1
 
-Framework local de automatización web con Java, Maven, Cucumber, JUnit 5 y Selenium. Demuestra login, validación de
-error y navegación contra [Sauce Demo](https://www.saucedemo.com/), una aplicación pública que podría cambiar o dejar de
-estar disponible. La URL no está acoplada al código.
+> Template version: **0.4.1**. Maven `pom.xml` is the source of truth for the version.
 
-## Stack y versiones verificadas (25-09-2026)
+## Quick start: new project
 
-| Elemento                              |         Versión | Motivo                                                                                |
-|---------------------------------------|----------------:|---------------------------------------------------------------------------------------|
-| Java                                  |          21 LTS | JDK local, LTS actual                                                                 |
-| Maven                                 |          3.9.16 | Instalado localmente                                                                  |
-| Selenium Java                         |          4.49.0 | WebDriver moderno con Selenium Manager incluido                                       |
-| Cucumber Java / JUnit Platform Engine |          7.33.0 | Última línea 7.x compatible con JUnit 5; mismo número para todos los módulos Cucumber |
-| JUnit Jupiter / Platform              | 5.14.4 / 1.14.4 | API de assertions y suite JUnit 5                                                     |
-| Maven Surefire                        |           3.6.0 | Ejecuta JUnit Platform y escribe XML JUnit                                            |
-| SLF4J Simple                          |          2.0.17 | Logging sencillo sin configuración pesada                                             |
+1. Clone this template and open `pom.xml` in IntelliJ as a Maven project.
+2. Verify Java 21 and Maven 3.9+ with `java -version` and `mvn -version`.
+3. Update the environment `baseUrl` values under `src/test/resources/config`.
+4. Replace or intentionally retain the public demo Features, Pages, Steps and demo data.
+5. Add business Features under `resources/features`, Pages under `pages` and Steps under `steps`.
+6. Run `mvn clean test -Dheadless=true`, then `mvn test '-Dcucumber.filter.tags=@smoke'`.
+7. Inspect `target/cucumber-reports`, `target/surefire-reports` and `target/logs`.
 
-La versión de Selenium se validó en Maven Central; Cucumber en su documentación oficial. Cucumber 8.0.1 requiere JUnit
-Platform 6 y presentó un conflicto de dependencias transitivas al resolverse con Maven, por lo que se fija 7.33.0 para
-respetar el requisito de JUnit 5. Surefire se validó en Apache Maven. Una **dependencia** es una librería que usa el
-código de pruebas. Un **plugin Maven** ejecuta una fase del build: aquí Surefire ejecuta `test`.
+The bundled Sauce Demo credentials are explicitly identified as **public demo data only**, so a fresh clone can execute the reference implementation. Never commit real passwords, tokens, API keys or corporate credentials. Enterprise projects must provide secrets through environment variables and later CI/CD secret management.
 
-## Requisitos y apertura en IntelliJ
+`qa`, `staging` and `prod-smoke` are demonstration profiles that currently use the public demo URL; they are not real Sauce Demo environments. QA remains the safe default. A real project must replace each URL, and must configure `prod-smoke` explicitly according to its production policy.
 
-Instale JDK 21 y Maven 3.9+. Abra `pom.xml` como proyecto Maven y permita que IntelliJ importe las dependencias. Plugins
-recomendados del IDE: **Gherkin** y **Cucumber for Java**. Son ayudas de edición y ejecución en IntelliJ; no sustituyen
-ni son dependencias Maven. El proyecto se ejecuta íntegramente por terminal con Maven.
+Normally do **not** change `ConfigResolver`, `DriverFactory`, `DriverManager`, hooks, evidence paths or logging infrastructure when starting a business project. See [architecture](docs/architecture.md), [compatibility](docs/compatibility.md), [constitution](docs/framework-constitution.md), [checklists](docs/template-checklist.md) and [contributing](CONTRIBUTING.md).
 
-## Estructura
+Framework local de automatización Web con Java 21, Maven, Selenium, Cucumber y JUnit 5. La demo usa Sauce Demo; su URL
+es externa y configurable.
+
+## Arquitectura
 
 ```text
-src/test/java/cl/consultor/qa/
-  runners/      Suite JUnit Platform que descubre Cucumber
-  steps/        Lenguaje de negocio que delega, sin findElement
-  pages/        Page Objects de Login e Inventario
-  components/   UI reutilizable: NavigationMenu
-  driver/       Creación y ciclo de vida centralizado de WebDriver
-  hooks/        Inicio, limpieza y evidencia de fallo
-  config/       Resolución externa de configuración
-  utils/        Waits explícitos y lectura de datos de ejemplo
-src/test/resources/
-  features/     Especificaciones Gherkin
-  config/       Defaults y endpoints por ambiente
-  testdata/     Datos públicos de demostración
+External executor (Maven / IntelliJ / futuro Jenkins)
+        | parameters
+ConfigLoader -> ConfigResolver -> immutable FrameworkConfig
+        |                         |
+        +--> DriverFactory <-------+--> Hooks -> DriverManager (ThreadLocal)
+                 |                              |
+              Selenium Manager                  +--> Page Objects -> Selenium -> Browser
+
+Feature -> Step Definitions -> Pages / Components -> DriverManager
 ```
 
-Flujo: `Feature -> Step Definition -> Page Object / Component -> Selenium WebDriver -> Browser`.
+Features, steps y pages no conocen IntelliJ, Jenkins, Docker, Grid ni el sistema operativo. `DriverFactory` es el único
+punto que instancia `ChromeDriver` o `FirefoxDriver`; Selenium Manager obtiene el ejecutable compatible sin drivers en
+el repositorio.
 
-Un Page Object representa una página coherente. Un Component Object representa una pieza reutilizable de UI;
-`NavigationMenu` puede vivir en más de una página.
+## Execution contract
 
-## Configuración
+Precedencia única: **JVM system property > environment variable > environment file > default file**. La unidad de
+`TIMEOUT` es segundos. `prod-smoke` nunca es el default.
 
-`config/config.properties` guarda defaults. `ENV` elige `config/<env>.properties` (`qa`, `staging`, `prod-smoke`). Se
-resuelve así: propiedad JVM (`-D...`) -> variable de entorno -> archivo -> default. Las variables son `ENV`, `BASE_URL`,
-`BROWSER`, `HEADLESS`, `TIMEOUT`; no agregue secretos al repositorio. Los datos actuales son públicos de Sauce Demo
-únicamente.
+| Parámetro      | Propiedad JVM                     | Variable         | Valores                       | Default                 |
+|----------------|-----------------------------------|------------------|-------------------------------|-------------------------|
+| Environment    | `-Denv=qa`                        | `ENV`            | `qa`, `staging`, `prod-smoke` | `qa`                    |
+| Browser        | `-Dbrowser=chrome`                | `BROWSER`        | `chrome`, `firefox`           | `chrome`                |
+| Headless       | `-Dheadless=true`                 | `HEADLESS`       | `true`, `false`               | `false`                 |
+| Base URL       | `-DbaseUrl=https://...`           | `BASE_URL`       | URL HTTP(S) absoluta          | archivo del environment |
+| Timeout        | `-Dtimeout=10`                    | `TIMEOUT`        | entero positivo en segundos   | `10`                    |
+| Execution mode | `-DexecutionMode=local`           | `EXECUTION_MODE` | `local`                       | `local`                 |
+| Cucumber tags  | `-Dcucumber.filter.tags="@smoke"` | `TAGS`*          | expresión Cucumber            | todos                   |
 
-Los selectores priorizan `id` y `data-test`; se evita XPath frágil. `Waits` centraliza espera explícita de visibilidad y
-clickeabilidad: `presence` solo confirma presencia DOM, `visibility` exige que sea visible y `clickable` añade que pueda
-interactuarse. No se usa `Thread.sleep`.
+`-Dcucumber.filter.tags` es el mecanismo canónico. `TAGS` queda reservado para un futuro adaptador de CI; por ahora use
+la propiedad oficial para no duplicar el filtro de Cucumber.
 
-## Ejecución desde Windows PowerShell
+Los archivos están en `src/test/resources/config`: `default.properties` contiene valores comunes y cada environment solo
+su `baseUrl`. No almacene secretos allí. Configuraciones inválidas fallan antes de abrir el navegador:
+browser/environment no soportado, boolean inválido, timeout inválido, URL inválida y `executionMode=remote` producen
+mensajes claros. La ejecución remota está reservada, no hace fallback silencioso a local.
+
+## Ejecución
+
+En PowerShell:
 
 ```powershell
 cd .\qa-web-automation
 mvn clean test
-$env:BROWSER='firefox'; mvn clean test
-$env:HEADLESS='true'; mvn clean test
-$env:ENV='staging'; mvn clean test
-mvn clean test '-Dcucumber.filter.tags=@smoke'
-mvn clean test '-Dcucumber.filter.tags=@regression and @critical'
+mvn clean test -Denv=staging -Dbrowser=chrome -Dheadless=true
+mvn clean test '-Dcucumber.filter.tags=@smoke and @critical'
+
+$env:ENV='qa'; $env:BROWSER='firefox'; $env:HEADLESS='true'
+mvn clean test
+Remove-Item Env:ENV,Env:BROWSER,Env:HEADLESS
 ```
 
-Para limpiar la variable de la sesión: `Remove-Item Env:BROWSER`. En CMD use `set BROWSER=firefox && mvn clean test`.
-También puede usar propiedades JVM, por ejemplo `mvn test -Dbrowser=firefox -Dheadless=true`.
+Use `-D...` para una ejecución aislada y reproducible (ideal para Maven/Jenkins). Use variables de entorno para una
+sesión de terminal, secretos o Docker. En CMD: `set BROWSER=firefox && mvn clean test`.
 
-Tags no son categorías exclusivas: el escenario principal es simultáneamente `@smoke`, `@regression` y `@critical`.
+## Ciclo de vida, evidencias y reportes
 
-## Evidencias y reportes
+Cada `@Before` resuelve y valida `FrameworkConfig`, registra el snapshot sin secretos y crea un driver. Cada `@After`
+captura evidencia en caso de fallo, adjunta el PNG a Cucumber, ejecuta `quit()` y remueve el contexto incluso si la
+captura falla. `ThreadLocal` asigna un driver/config por hilo: hoy evita estado global compartido y mañana permitirá
+paralelizar sin reescribir tests; la paralelización no está activa.
 
-Después de ejecutar, consulte:
+- `target/cucumber-reports/cucumber.html`: reporte HTML Cucumber.
+- `target/surefire-reports/TEST-*.xml`: XML JUnit para futuros artifacts Jenkins.
+- `target/screenshots/<runId>/`: capturas únicas por ejecución fallida.
+- `target/logs/framework.log`: lifecycle, configuración efectiva y errores sin secretos.
 
-- `target/cucumber-reports/cucumber.html`: reporte HTML de Cucumber.
-- `target/surefire-reports/TEST-*.xml`: XML JUnit para una futura integración Jenkins.
-- `target/screenshots/`: PNG único por escenario fallido, adjuntado además al escenario Cucumber.
-- consola Maven: logging de inicio, entorno, browser, URL, error y cierre.
+Las assertions permanecen visibles en los steps y los waits explícitos usan el `Duration` tipado de `FrameworkConfig`.
+No se utiliza `Thread.sleep` ni se crean drivers desde Pages/Steps.
 
-Selenium Manager se incluye con Selenium: al construir `ChromeDriver` o `FirefoxDriver`, Selenium resuelve el driver
-compatible sin `chromedriver.exe` ni rutas hardcodeadas dentro del proyecto.
+## Dependencias y plugins Maven
 
-`DriverFactory` es el único lugar que crea drivers locales. `DriverManager` usa `ThreadLocal`: hoy evita estado global
-mal compartido; en una futura ejecución paralela conserva un driver por hilo/escenario. Para Grid solo se reemplazaría
-esta fábrica por una estrategia `RemoteWebDriver`, sin reescribir features, steps o pages.
+Las **dependencies** son Selenium, Cucumber, JUnit Platform y Logback, usadas por el código de pruebas. El único **Maven
+plugin** es Surefire, que ejecuta `mvn test` y escribe XML JUnit. Se mantienen Selenium 4.49.0, Cucumber 7.33.0, JUnit
+5.14.4 / Platform 1.14.4 y Surefire 3.6.0; no se agregó TestNG ni Failsafe.
 
-## Cómo extenderlo
+## Troubleshooting
 
-Para una Feature nueva, cree un `.feature` funcional bajo `resources/features`, añada steps pequeños y delegue a
-Pages/Components. Para una Page nueva, cree una clase con locators estables y operaciones de negocio. Para Edge, agregue
-sus opciones y el `case "edge"` solo en `DriverFactory`. Para un ambiente, agregue `config/<ambiente>.properties`;
-Jenkins podrá inyectar sus valores por variables de entorno.
+- `Unsupported browser`: use `chrome` o `firefox`; Edge se agrega exclusivamente en `DriverFactory` en otra fase.
+- `Unsupported environment`: use `qa`, `staging` o `prod-smoke`.
+- Firefox/Chrome no disponible: instale el browser; Selenium Manager gestiona el driver, no el browser.
+- `BASE_URL` inválida o inalcanzable: corrija la URL/entorno y compruebe conectividad.
+- `TIMEOUT` inválido: use un entero positivo, por ejemplo `-Dtimeout=15`.
+- Cucumber encuentra 0 escenarios: revise la expresión de tags y `src/test/resources/features`.
+- Para diagnóstico, consulte logs, screenshots, HTML Cucumber y XML Surefire en `target/`.
 
-JUnit 5 es el framework/runner elegido. TestNG puede ser válido en otro proyecto, pero no es necesario para Cucumber ni
-se mezcla aquí. Failsafe tampoco se usa: en esta fase toda la suite vive en `mvn test`.
+## Preparado para fases posteriores
 
-## Roadmap (no implementado)
+El contrato externo, `FrameworkConfig`, `DriverFactory` y `DriverManager` permiten añadir `ExecutionMode.REMOTE` y
+`RemoteWebDriver` en una fase Grid sin cambiar features, steps ni pages. No se implementan Docker, Grid, RemoteWebDriver
+funcional, Jenkins, CI/CD, ALM, Allure ni paralelización activa en esta fase.
 
-1. Fase 2: Git y estrategia de repositorio.
-2. Fase 3: Dockerización.
-3. Fase 4: Selenium Grid y navegadores Docker.
-4. Fase 5: Jenkins Pipeline.
-5. Fase 6: CI/CD, smoke, regression, E2E y quality gates.
-6. Fase 7: ALM / Test Management.
-7. Fase 8: paralelización avanzada y cross-browser.
-8. Fase 9: reporting y observabilidad empresariales.
+## Calidad interna y diseño de pruebas
 
-No se implementan deliberadamente Jenkins, Docker, Grid, RemoteWebDriver, CI/CD, ALM, Kubernetes, TestNG ni Failsafe. La
-separación de configuración, factory y resultados deja puntos de extensión claros para esas fases.
+`Requirement -> Risk -> Technique -> Scenario -> Test data + Tags -> Steps -> Pages / Components -> Driver -> Browser -> Assertions -> Evidence`
+
+Una **Page** representa una pantalla; un **Component** representa UI reutilizable. `NavigationMenu` es un component real. No existe estado mutable compartido: cada scenario recibe driver y configuración mediante `ThreadLocal`. Un `ScenarioContext` solo se agregará si un futuro flujo necesita compartir datos tipados dentro del mismo scenario; nunca como mapa global.
+
+Los locators priorizan `id` y `data-test`. Los waits distinguen presence (DOM), visibility (visible) y clickable (interactuable). Pages leen/interactúan; las assertions de negocio permanecen en Steps e informan esperado y recibido. Consulte [estrategia](docs/test-strategy.md), [convenciones](docs/coding-conventions.md) y [guía anti-flaky](docs/flaky-tests.md).
