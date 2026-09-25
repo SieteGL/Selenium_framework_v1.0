@@ -1,0 +1,11 @@
+target/
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+logs/
+screenshots/
+.env
+*.log
+src/test/resources/testdata/credentials.properties
