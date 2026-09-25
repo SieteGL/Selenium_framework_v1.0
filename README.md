@@ -1,4 +1,4 @@
-# qa-web-automation - Fase 1.1
+# qa-web-automation - Fase 2
 
 > Template version: **0.4.1**. Maven `pom.xml` is the source of truth for the version.
 
@@ -16,7 +16,7 @@ The bundled Sauce Demo credentials are explicitly identified as **public demo da
 
 `qa`, `staging` and `prod-smoke` are demonstration profiles that currently use the public demo URL; they are not real Sauce Demo environments. QA remains the safe default. A real project must replace each URL, and must configure `prod-smoke` explicitly according to its production policy.
 
-Normally do **not** change `ConfigResolver`, `DriverFactory`, `DriverManager`, hooks, evidence paths or logging infrastructure when starting a business project. See [architecture](docs/architecture.md), [compatibility](docs/compatibility.md), [constitution](docs/framework-constitution.md), [checklists](docs/template-checklist.md) and [contributing](CONTRIBUTING.md).
+Normally do **not** change `ConfigResolver`, `DriverFactory`, `DriverManager`, hooks, evidence paths or logging infrastructure when starting a business project. See [architecture](docs/architecture.md), [compatibility](docs/compatibility.md), [constitution](docs/framework-constitution.md), [checklists](docs/template-checklist.md), [Jenkins CI](docs/jenkins-ci.md) and [contributing](CONTRIBUTING.md).
 
 Framework local de automatización Web con Java 21, Maven, Selenium, Cucumber y JUnit 5. La demo usa Sauce Demo; su URL
 es externa y configurable.
@@ -24,7 +24,7 @@ es externa y configurable.
 ## Arquitectura
 
 ```text
-External executor (Maven / IntelliJ / futuro Jenkins)
+External executor (Maven / IntelliJ / Jenkins)
         | parameters
 ConfigLoader -> ConfigResolver -> immutable FrameworkConfig
         |                         |
@@ -88,12 +88,18 @@ captura falla. `ThreadLocal` asigna un driver/config por hilo: hoy evita estado 
 paralelizar sin reescribir tests; la paralelización no está activa.
 
 - `target/cucumber-reports/cucumber.html`: reporte HTML Cucumber.
-- `target/surefire-reports/TEST-*.xml`: XML JUnit para futuros artifacts Jenkins.
+- `target/surefire-reports/TEST-*.xml`: XML JUnit publicado por Jenkins.
 - `target/screenshots/<runId>/`: capturas únicas por ejecución fallida.
 - `target/logs/framework.log`: lifecycle, configuración efectiva y errores sin secretos.
 
 Las assertions permanecen visibles en los steps y los waits explícitos usan el `Duration` tipado de `FrameworkConfig`.
 No se utiliza `Thread.sleep` ni se crean drivers desde Pages/Steps.
+
+## Jenkins CI baseline
+
+El repositorio incluye un `Jenkinsfile` declarativo y parametrizado que ejecuta el mismo Execution Contract de Maven: primero los self-tests del framework y después la suite UI seleccionada. `TEST_SUITE` se traduce a `-Dcucumber.filter.tags=@<suite>`; `BASE_URL_OVERRIDE`, si se entrega, se inyecta como `BASE_URL` y nunca como texto de comando.
+
+La baseline requiere que el agente Jenkins ya disponga de Java 21, Maven 3.9+ y el browser local elegido. No instala Jenkins ni incorpora Docker, Grid o `RemoteWebDriver`. Consulte la [guía Jenkins CI](docs/jenkins-ci.md) para parámetros, setup, equivalencia local, evidencia y límites de alcance.
 
 ## Dependencias y plugins Maven
 
@@ -114,8 +120,9 @@ plugin** es Surefire, que ejecuta `mvn test` y escribe XML JUnit. Se mantienen S
 ## Preparado para fases posteriores
 
 El contrato externo, `FrameworkConfig`, `DriverFactory` y `DriverManager` permiten añadir `ExecutionMode.REMOTE` y
-`RemoteWebDriver` en una fase Grid sin cambiar features, steps ni pages. No se implementan Docker, Grid, RemoteWebDriver
-funcional, Jenkins, CI/CD, ALM, Allure ni paralelización activa en esta fase.
+`RemoteWebDriver` en una fase Grid sin cambiar features, steps ni pages. Esta fase implementa una baseline Jenkins local;
+no implementa Docker, Grid, RemoteWebDriver funcional, instalación/configuración de un servidor Jenkins, ALM, Allure ni
+paralelización activa.
 
 ## Calidad interna y diseño de pruebas
 
