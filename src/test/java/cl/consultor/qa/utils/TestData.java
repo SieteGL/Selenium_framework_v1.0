@@ -11,9 +11,15 @@ public final class TestData {
     }
 
     public static String value(String key) {
+        String environmentValue = System.getenv(environmentKey(key));
+        if (environmentValue != null && !environmentValue.isBlank()) return environmentValue;
         String value = DATA.getProperty(key);
         if (value == null || value.isBlank()) throw new IllegalStateException("Missing required test data key: " + key);
         return value;
+    }
+
+    private static String environmentKey(String key) {
+        return "QA_" + key.toUpperCase().replace('.', '_');
     }
 
     private static Properties load() {

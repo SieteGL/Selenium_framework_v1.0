@@ -62,8 +62,16 @@ pipeline {
 
                     // BASE_URL is an Execution Contract input; it is not concatenated into a shell command.
                     if (params.BASE_URL_OVERRIDE?.trim()) {
-                        withEnv(["BASE_URL=${params.BASE_URL_OVERRIDE.trim()}"]) {
-                            runMaven(arguments)
+                        if (params.TEST_SUITE == 'casa-quintero') {
+                            withCredentials([usernamePassword(credentialsId: 'casa-quintero-qa-user', usernameVariable: 'QA_CASA_USERNAME', passwordVariable: 'QA_CASA_PASSWORD')]) {
+                                withEnv(["BASE_URL=${params.BASE_URL_OVERRIDE.trim()}"]) {
+                                    runMaven(arguments)
+                                }
+                            }
+                        } else {
+                            withEnv(["BASE_URL=${params.BASE_URL_OVERRIDE.trim()}"]) {
+                                runMaven(arguments)
+                            }
                         }
                     } else {
                         runMaven(arguments)

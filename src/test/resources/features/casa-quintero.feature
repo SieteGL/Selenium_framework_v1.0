@@ -1,9 +1,11 @@
 @casa-quintero @smoke
-Feature: Instalación inicial de Casa Quintero
-  Como propietario de una instancia nueva
-  quiero encontrar la pantalla de preparación privada
-  para poder crear la primera cuenta autorizada.
+Feature: Acceso privado a Casa Quintero
+  Como propietario autorizado
+  quiero iniciar sesión en la casa
+  para consultar el calendario privado.
 
-  Scenario: La pantalla de preparación está disponible
+  Scenario: Marco inicia sesión y llega al calendario
     Given la aplicación Casa Quintero está disponible
     Then se muestra el formulario de acceso privado de Casa Quintero
+    When Marco inicia sesión en Casa Quintero
+    Then se muestra el calendario privado de Casa Quintero
